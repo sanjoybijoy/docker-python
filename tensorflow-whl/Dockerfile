@@ -13,6 +13,7 @@ COPY --from=nvidia /etc/apt/sources.list.d/cuda.list /etc/apt/sources.list.d/
 COPY --from=nvidia /etc/apt/sources.list.d/nvidia-ml.list /etc/apt/sources.list.d/
 COPY --from=nvidia /etc/apt/trusted.gpg /etc/apt/trusted.gpg.d/cuda.gpg
 
+# TODO(rosbo): Move to a `install-cuda.sh` and reuse it in gpu.Dockerfile
 ENV CUDA_VERSION=9.1.85
 ENV CUDA_PKG_VERSION=9-1=$CUDA_VERSION-1
 LABEL com.nvidia.volumes.needed="nvidia_driver"
