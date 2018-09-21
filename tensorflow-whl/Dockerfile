@@ -1,4 +1,4 @@
-FROM nvidia/cuda:9.1-cudnn7-devel-ubuntu16.04 AS nvidia
+FROM nvidia/cuda:9.2-cudnn7-devel-ubuntu16.04 AS nvidia
 FROM continuumio/anaconda3:5.0.1
 
 # Avoid interactive configuration prompts/dialogs during apt-get.
@@ -14,8 +14,8 @@ COPY --from=nvidia /etc/apt/sources.list.d/nvidia-ml.list /etc/apt/sources.list.
 COPY --from=nvidia /etc/apt/trusted.gpg /etc/apt/trusted.gpg.d/cuda.gpg
 
 # TODO(rosbo): Move to a `install-cuda.sh` and reuse it in gpu.Dockerfile
-ENV CUDA_VERSION=9.1.85
-ENV CUDA_PKG_VERSION=9-1=$CUDA_VERSION-1
+ENV CUDA_VERSION=9.2.88
+ENV CUDA_PKG_VERSION=9-2=$CUDA_VERSION-1
 LABEL com.nvidia.volumes.needed="nvidia_driver"
 LABEL com.nvidia.cuda.version="${CUDA_VERSION}"
 ENV PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}
@@ -29,17 +29,19 @@ ENV NVIDIA_VISIBLE_DEVICES=all
 ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 ENV NVIDIA_REQUIRE_CUDA="cuda>=9.0"
 RUN apt-get update && apt-get install -y --no-install-recommends \
+      cuda-cupti-$CUDA_PKG_VERSION \
       cuda-cudart-$CUDA_PKG_VERSION \
+      cuda-cudart-dev-$CUDA_PKG_VERSION \
       cuda-libraries-$CUDA_PKG_VERSION \
       cuda-libraries-dev-$CUDA_PKG_VERSION \
       cuda-nvml-dev-$CUDA_PKG_VERSION \
       cuda-minimal-build-$CUDA_PKG_VERSION \
       cuda-command-line-tools-$CUDA_PKG_VERSION \
-      libcudnn7=7.0.5.15-1+cuda9.1 \
-      libcudnn7-dev=7.0.5.15-1+cuda9.1 \
-      libnccl2=2.2.12-1+cuda9.1 \
-      libnccl-dev=2.2.12-1+cuda9.1 && \
-    ln -s /usr/local/cuda-9.1 /usr/local/cuda && \
+      libcudnn7=7.2.1.38-1+cuda9.2 \
+      libcudnn7-dev=7.2.1.38-1+cuda9.2 \
+      libnccl2=2.2.13-1+cuda9.2 \
+      libnccl-dev=2.2.13-1+cuda9.2 && \
+    ln -s /usr/local/cuda-9.2 /usr/local/cuda && \
     ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/cuda/lib64/stubs/libcuda.so.1 && \
     rm -rf /var/lib/apt/lists/*
 
@@ -71,6 +73,8 @@ RUN cd /usr/local/src && \
 
 # Create a tensorflow wheel for CPU
 RUN cd /usr/local/src/tensorflow && \
+    # TODO(rosbo): Ensures it fails instead of trying to download new
+    # dependencies versions if requirements have changed.
     cat /dev/null | ./configure && \
     bazel build --config=opt //tensorflow/tools/pip_package:build_pip_package && \
     bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_cpu && \
@@ -78,7 +82,7 @@ RUN cd /usr/local/src/tensorflow && \
 
 # Create a tensorflow wheel for GPU/cuda
 ENV TF_NEED_CUDA=1
-ENV TF_CUDA_VERSION=9.1
+ENV TF_CUDA_VERSION=9.2
 ENV TF_CUDA_COMPUTE_CAPABILITIES=3.7,6.0
 ENV TF_CUDNN_VERSION=7
 ENV TF_NCCL_VERSION=2
