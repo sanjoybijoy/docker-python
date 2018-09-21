@@ -73,8 +73,6 @@ RUN cd /usr/local/src && \
 
 # Create a tensorflow wheel for CPU
 RUN cd /usr/local/src/tensorflow && \
-    # TODO(rosbo): Ensures it fails instead of trying to download new
-    # dependencies versions if requirements have changed.
     cat /dev/null | ./configure && \
     bazel build --config=opt //tensorflow/tools/pip_package:build_pip_package && \
     bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_cpu && \
@@ -91,6 +89,8 @@ ENV NCCL_INSTALL_PATH=/usr/
 RUN cd /usr/local/src/tensorflow && \
     # TF_NCCL_INSTALL_PATH is used for both libnccl.so.2 and libnccl.h. Make sure they are both accessible from the same directory.
     ln -s /usr/lib/x86_64-linux-gnu/libnccl.so.2 /usr/lib/ && \
+    # TODO(rosbo): Ensures it fails instead of trying to download new
+    # dependencies versions if requirements have changed.
     cat /dev/null | ./configure && \
     echo "/usr/local/cuda-${TF_CUDA_VERSION}/targets/x86_64-linux/lib/stubs" > /etc/ld.so.conf.d/cuda-stubs.conf && ldconfig && \
     bazel build --config=opt \
